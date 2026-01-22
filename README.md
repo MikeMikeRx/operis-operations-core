@@ -59,8 +59,63 @@ Future domains (planned, not implemented yet):
 - **Runtime**: Node.js
 - **Framework**: Fastify
 - **Language**: TypeScript
+- **Database**: PostgreSQL + Prisma 7
 - **Validation**: Zod
 - **API Docs**: Swagger / OpenAPI
 - **Logging**: Pino
+
+---
+
+## Docker
+
+### Start all services
+
+```bash
+docker-compose up -d
+```
+
+### Services
+
+| Service  | Port | Description          |
+|----------|------|----------------------|
+| API      | 3000 | Fastify backend      |
+| Postgres | 5432 | PostgreSQL database  |
+
+### Rebuild after changes
+
+```bash
+docker-compose up -d --build
+```
+
+### View logs
+
+```bash
+docker-compose logs -f api
+```
+
+### Stop all services
+
+```bash
+docker-compose down
+```
+
+---
+
+## Local Development (without Docker)
+
+Run the API directly on your machine while using Docker for Postgres:
+
+```bash
+# Start only database
+docker-compose up -d postgres
+
+# Run API locally (uses port 4001)
+cd backend && npm run dev
+```
+
+- **Local API**: `http://localhost:4001`
+- **Docker API**: `http://localhost:3000`
+
+Both can run simultaneously without conflicts.
 
 ---
