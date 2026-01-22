@@ -2,10 +2,11 @@ import Fastify from "fastify";
 import requestContextPlugin from "./plugins/requestContext.js";
 import tenantContextPlugin from "./plugins/tenantContext.js";
 import userContextPlugin from "./plugins/userContext.js";
+import idempotencyPlugin from "./plugins/idempotency.js";
 import swaggerPlugin from "./plugins/swagger.js";
 import dbPlugin from "./plugins/db.js";
 // import { requirePerm } from "./auth/rbac.js";
-import { productsRoutes } from "./routes/product.js";
+import { productsRoutes } from "./routes/products.js";
 
 const app = Fastify({
   logger: {
@@ -27,6 +28,7 @@ await app.register(tenantContextPlugin);
 await app.register(swaggerPlugin);
 await app.register(userContextPlugin);
 await app.register(productsRoutes);
+await app.register(idempotencyPlugin);
 
 // Health route
 app.get(

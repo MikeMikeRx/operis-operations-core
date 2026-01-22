@@ -68,12 +68,17 @@ export async function productsRoutes(app: FastifyInstance) {
       const id = (req.params as any).id as string;
       const body = UpdateProductBody.parse(req.body);
 
-      const updated = await app.prisma.product.updateMany({
-        where: { id, tenantId: req.tenantId, deletedAt: null },
+      const db = tenantDb(app.prisma, req.tenantId);
+
+      const res = await db.product.updateMany({
+        where: { id }, // tenant + deletedAt filtering handled by tenantDb wrapper
         data: body,
       });
 
-      if (updated.count === 0) return reply.code(404).send({ error: "not found" });
+      if (res.count === 0) return reply.code(404).send({ error: "not found" });
+
+      const updated = await db.product.findFirst({ where: { id } });
+      if (!updated) return reply.code(404).send({ error: "not found" }); // defensive
 
       await writeAudit(app.prisma, {
         tenantId: req.tenantId,
@@ -84,7 +89,7 @@ export async function productsRoutes(app: FastifyInstance) {
         meta: body,
       });
 
-      return reply.code(204).send();
+      return reply.code(200).send(updated);
     }
   );
 
@@ -104,8 +109,10 @@ export async function productsRoutes(app: FastifyInstance) {
     async (req, reply) => {
       const id = (req.params as any).id as string;
 
-      const res = await app.prisma.product.updateMany({
-        where: { id, tenantId: req.tenantId, deletedAt: null },
+      const db = tenantDb(app.prisma, req.tenantId);
+
+      const res = await db.product.updateMany({
+        where: { id },
         data: { deletedAt: new Date() },
       });
 
@@ -119,7 +126,7 @@ export async function productsRoutes(app: FastifyInstance) {
         entityId: id,
       });
 
-      return reply.code(204).send();
+      return reply.code(200).send({ deleted: true, id });
     }
   );
 }
