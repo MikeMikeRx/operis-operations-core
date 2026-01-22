@@ -50,6 +50,9 @@ Future domains (planned, not implemented yet):
 - **Expense Records** – Structured expense data with lifecycle states
 - **Approval Workflows** – Role-based approval and rejection
 - **Audit Logging** – Immutable record of operational actions
+- **Idempotency** – Safe retries for write operations
+- **Rate Limiting** – Per-tenant request quotas via Redis
+- **Background Workers** – BullMQ jobs for maintenance tasks
 - **API-First Design** – No UI dependency
 
 ---
@@ -60,6 +63,7 @@ Future domains (planned, not implemented yet):
 - **Framework**: Fastify
 - **Language**: TypeScript
 - **Database**: PostgreSQL + Prisma 7
+- **Cache/Queue**: Redis + BullMQ
 - **Validation**: Zod
 - **API Docs**: Swagger / OpenAPI
 - **Logging**: Pino
@@ -76,10 +80,12 @@ docker-compose up -d
 
 ### Services
 
-| Service  | Port | Description          |
-|----------|------|----------------------|
-| API      | 3000 | Fastify backend      |
-| Postgres | 5432 | PostgreSQL database  |
+| Service  | Port | Description              |
+|----------|------|--------------------------|
+| API      | 3000 | Fastify backend          |
+| Worker   | -    | BullMQ background jobs   |
+| Postgres | 5432 | PostgreSQL database      |
+| Redis    | 6379 | Cache and job queue      |
 
 ### Rebuild after changes
 
@@ -103,11 +109,11 @@ docker-compose down
 
 ## Local Development (without Docker)
 
-Run the API directly on your machine while using Docker for Postgres:
+Run the API directly on your machine while using Docker for Postgres and Redis:
 
 ```bash
-# Start only database
-docker-compose up -d postgres
+# Start database and Redis
+docker-compose up -d postgres redis
 
 # Run API locally (uses port 4001)
 cd backend && npm run dev
