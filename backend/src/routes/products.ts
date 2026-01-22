@@ -9,6 +9,7 @@ export async function productsRoutes(app: FastifyInstance) {
     "/v1/products",
     {
       preHandler: [requirePerm("product:read")],
+      config: { rateLimit: { max: 120, timeWindow: "1 minute" } },
       schema: {
         tags: ["products"],
         querystring: {
@@ -30,6 +31,7 @@ export async function productsRoutes(app: FastifyInstance) {
     "/v1/products",
     {
       preHandler: [requirePerm("product:write")],
+      config: { rateLimit: { max: 60, timeWindow: "1 minute" } },
       schema: { tags: ["products"] },
     },
     async (req, reply) => {
@@ -55,6 +57,7 @@ export async function productsRoutes(app: FastifyInstance) {
     "/v1/products/:id",
     {
       preHandler: [requirePerm("product:write")],
+      config: { rateLimit: { max: 60, timeWindow: "1 minute" } },
       schema: {
         tags: ["products"],
         params: {
@@ -97,6 +100,7 @@ export async function productsRoutes(app: FastifyInstance) {
     "/v1/products/:id",
     {
       preHandler: [requirePerm("product:write")],
+      config: { rateLimit: { max: 60, timeWindow: "1 minute" } },
       schema: {
         tags: ["products"],
         params: {

@@ -3,6 +3,7 @@ import requestContextPlugin from "./plugins/requestContext.js";
 import tenantContextPlugin from "./plugins/tenantContext.js";
 import userContextPlugin from "./plugins/userContext.js";
 import idempotencyPlugin from "./plugins/idempotency.js";
+import rateLimitPlugin from "./plugins/rateLimit.js";
 import swaggerPlugin from "./plugins/swagger.js";
 import dbPlugin from "./plugins/db.js";
 // import { requirePerm } from "./auth/rbac.js";
@@ -27,6 +28,7 @@ await app.register(requestContextPlugin); // request id, base logger
 await app.register(dbPlugin);             // Prisma
 await app.register(tenantContextPlugin);  // x-tenant-id
 await app.register(userContextPlugin);    // x-user-id
+await app.register(rateLimitPlugin);      // protect API usage
 await app.register(idempotencyPlugin);    // protect writes
 await app.register(swaggerPlugin);        // docs
 await app.register(productsRoutes);       // business routes
