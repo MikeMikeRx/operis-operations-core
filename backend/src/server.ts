@@ -7,6 +7,7 @@ import swaggerPlugin from "./plugins/swagger.js";
 import dbPlugin from "./plugins/db.js";
 // import { requirePerm } from "./auth/rbac.js";
 import { productsRoutes } from "./routes/products.js";
+import { ensureMaintenanceJobs } from "./queues/maintenance.js";
 
 const app = Fastify({
   logger: {
@@ -22,13 +23,13 @@ const port = Number(process.env.PORT ?? 3000);
 const host = process.env.HOST ?? "0.0.0.0";
 
 // Register plugins
-await app.register(requestContextPlugin);
-await app.register(dbPlugin);
-await app.register(tenantContextPlugin);
-await app.register(swaggerPlugin);
-await app.register(userContextPlugin);
-await app.register(productsRoutes);
-await app.register(idempotencyPlugin);
+await app.register(requestContextPlugin); // request id, base logger
+await app.register(dbPlugin);             // Prisma
+await app.register(tenantContextPlugin);  // x-tenant-id
+await app.register(userContextPlugin);    // x-user-id
+await app.register(idempotencyPlugin);    // protect writes
+await app.register(swaggerPlugin);        // docs
+await app.register(productsRoutes);       // business routes
 
 // Health route
 app.get(
@@ -51,6 +52,9 @@ app.get(
 
 try {
   await app.listen({ port, host });
+
+  // Start background/maintenance jobs AFTER server is up
+  await ensureMaintenanceJobs();
 } catch (err) {
   app.log.error(err);
   process.exit(1);
