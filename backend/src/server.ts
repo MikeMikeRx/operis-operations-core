@@ -5,6 +5,7 @@ import userContextPlugin from "./plugins/userContext.js";
 import swaggerPlugin from "./plugins/swagger.js";
 import dbPlugin from "./plugins/db.js";
 // import { requirePerm } from "./auth/rbac.js";
+import { productsRoutes } from "./routes/product.js";
 
 const app = Fastify({
   logger: {
@@ -25,6 +26,7 @@ await app.register(dbPlugin);
 await app.register(tenantContextPlugin);
 await app.register(swaggerPlugin);
 await app.register(userContextPlugin);
+await app.register(productsRoutes);
 
 // Health route
 app.get(

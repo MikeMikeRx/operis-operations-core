@@ -1,0 +1,125 @@
+import type { FastifyInstance } from "fastify";
+import { requirePerm } from "../auth/rbac.js";
+import { tenantDb } from "../db/tenant.js";
+import { CreateProductBody, UpdateProductBody } from "./product.schemas.js";
+import { writeAudit } from "../audit/audit.js";
+
+export async function productsRoutes(app: FastifyInstance) {
+  app.get(
+    "/v1/products",
+    {
+      preHandler: [requirePerm("product:read")],
+      schema: {
+        tags: ["products"],
+        querystring: {
+          type: "object",
+          properties: {
+            limit: { type: "integer", minimum: 1, maximum: 100, default: 20 },
+          },
+        },
+      },
+    },
+    async (req) => {
+      const limit = Math.min(Number((req.query as any)?.limit ?? 20), 100);
+      const db = tenantDb(app.prisma, req.tenantId);
+      return db.product.findMany({ take: limit, orderBy: { createdAt: "desc" } });
+    }
+  );
+
+  app.post(
+    "/v1/products",
+    {
+      preHandler: [requirePerm("product:write")],
+      schema: { tags: ["products"] },
+    },
+    async (req, reply) => {
+      const body = CreateProductBody.parse(req.body);
+      const db = tenantDb(app.prisma, req.tenantId);
+
+      const created = await db.product.create(body);
+
+      await writeAudit(app.prisma, {
+        tenantId: req.tenantId,
+        actorId: req.userId,
+        action: "product.create",
+        entity: "Product",
+        entityId: created.id,
+        meta: { sku: created.sku },
+      });
+
+      return reply.code(201).send(created);
+    }
+  );
+
+  app.patch(
+    "/v1/products/:id",
+    {
+      preHandler: [requirePerm("product:write")],
+      schema: {
+        tags: ["products"],
+        params: {
+          type: "object",
+          required: ["id"],
+          properties: { id: { type: "string" } },
+        },
+      },
+    },
+    async (req, reply) => {
+      const id = (req.params as any).id as string;
+      const body = UpdateProductBody.parse(req.body);
+
+      const updated = await app.prisma.product.updateMany({
+        where: { id, tenantId: req.tenantId, deletedAt: null },
+        data: body,
+      });
+
+      if (updated.count === 0) return reply.code(404).send({ error: "not found" });
+
+      await writeAudit(app.prisma, {
+        tenantId: req.tenantId,
+        actorId: req.userId,
+        action: "product.update",
+        entity: "Product",
+        entityId: id,
+        meta: body,
+      });
+
+      return reply.code(204).send();
+    }
+  );
+
+  app.delete(
+    "/v1/products/:id",
+    {
+      preHandler: [requirePerm("product:write")],
+      schema: {
+        tags: ["products"],
+        params: {
+          type: "object",
+          required: ["id"],
+          properties: { id: { type: "string" } },
+        },
+      },
+    },
+    async (req, reply) => {
+      const id = (req.params as any).id as string;
+
+      const res = await app.prisma.product.updateMany({
+        where: { id, tenantId: req.tenantId, deletedAt: null },
+        data: { deletedAt: new Date() },
+      });
+
+      if (res.count === 0) return reply.code(404).send({ error: "not found" });
+
+      await writeAudit(app.prisma, {
+        tenantId: req.tenantId,
+        actorId: req.userId,
+        action: "product.delete",
+        entity: "Product",
+        entityId: id,
+      });
+
+      return reply.code(204).send();
+    }
+  );
+}
