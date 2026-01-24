@@ -1,4 +1,4 @@
-import type { PrismaClient } from "@prisma/client";
+import type { PrismaClient } from "../../generated/prisma/client.js";
 
 export async function cleanupIdempotencyKeys(prisma: PrismaClient) {
   const now = new Date();

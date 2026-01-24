@@ -1,5 +1,5 @@
 import type { FastifyRequest, FastifyReply } from "fastify";
-import type { PrismaClient } from "@prisma/client";
+import type { PrismaClient } from "../generated/prisma/client.js";
 
 export function requirePerm(perm: string) {
   return async (req: FastifyRequest, reply: FastifyReply) => {
