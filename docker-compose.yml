@@ -3,7 +3,7 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    container_name: operis-osm-api
+    container_name: operis-core-api
     command: npm run dev
     ports:
       - "3000:3000"
