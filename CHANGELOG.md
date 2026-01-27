@@ -18,10 +18,13 @@ This project follows **API versioning discipline**:
 - Audit logging for mutating actions
 - Redis-backed background worker
 - OpenAPI (Swagger) documentation
+- JWT authentication (Bearer tokens) for /api/v1
 
 ### Changed
 - Enforced `/api/v1` prefix for all public routes
 - Standardized write responses for idempotency safety
+- Removed header-based identity (x-tenant-id, x-user-id) in favor of JWT claims
+- Auth endpoints excluded from idempotency enforcement
 
 ### Fixed
 - CI pipeline stability
@@ -36,6 +39,7 @@ This project follows **API versioning discipline**:
 ### Security
 - Tenant isolation enforced at query layer
 - Permission checks required for write operations
+- Centralized auth guard for /api/v1/*
 
 ---
 
