@@ -19,12 +19,15 @@ This project follows **API versioning discipline**:
 - Redis-backed background worker
 - OpenAPI (Swagger) documentation
 - JWT authentication (Bearer tokens) for /api/v1
+- Refresh tokens with rotation and server-side revocation
+- Logout endpoint revoking refresh tokens
 
 ### Changed
 - Enforced `/api/v1` prefix for all public routes
 - Standardized write responses for idempotency safety
 - Removed header-based identity (x-tenant-id, x-user-id) in favor of JWT claims
 - Auth endpoints excluded from idempotency enforcement
+- Authentication enforced globally for `/api/v1/*`
 
 ### Fixed
 - CI pipeline stability
@@ -34,12 +37,13 @@ This project follows **API versioning discipline**:
 - Nothing
 
 ### Removed
-- Nothing
+- Header-based authentication context
 
 ### Security
 - Tenant isolation enforced at query layer
 - Permission checks required for write operations
 - Centralized auth guard for /api/v1/*
+- Refresh token hashing and revocation on logout
 
 ---
 
