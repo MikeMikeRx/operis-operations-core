@@ -1,7 +1,8 @@
 import type { FastifyInstance } from "fastify";
-import crypto from "node:crypto";
 import bcrypt from "bcrypt";
 import { z } from "zod";
+import { newRefreshToken, hashToken } from "../auth/refreshToken.js"
+import { REFRESH_COOKIE, refreshCookieOptions } from "../auth/cookies.js"
 
 const LoginBody = z.object({
   tenantId: z.string().min(1),
@@ -9,35 +10,10 @@ const LoginBody = z.object({
   password: z.string().min(8),
 });
 
-const REFRESH_COOKIE = "refreshToken";
-
-function sha256(input: string) {
-  return crypto.createHash("sha256").update(input).digest("hex");
-}
-
-function newRefreshToken() {
-  return crypto.randomBytes(48).toString("base64url");
-}
-
-function refreshExpiresAt() {
-  const days = Number(process.env.REFRESH_EXPIRES_DAYS ?? "14");
-  const d = new Date();
-  d.setDate(d.getDate() + days);
-  return d;
-}
-
-function setRefreshCookie(reply: any, token: string) {
-  reply.setCookie(REFRESH_COOKIE, token, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
-    path: "/api/v1/auth",
-  });
-}
-
-function clearRefreshCookie(reply: any) {
-  reply.clearCookie(REFRESH_COOKIE, { path: "/api/v1/auth" });
-}
+const accessTTL = () => process.env.JWT_EXPIRES_IN ?? "15m";
+const refreshDays = () => Number(process.env.REFRESH_DAYS ?? 30);
+const refreshExpiresAt = () =>
+  new Date(Date.now() + refreshDays() * 24 * 60 * 60 * 1000);
 
 export async function authRoutes(app: FastifyInstance) {
   app.post(
@@ -76,7 +52,7 @@ export async function authRoutes(app: FastifyInstance) {
     async (req, reply) => {
       const parsed = LoginBody.safeParse(req.body);
       if (!parsed.success) {
-        return reply.code(422).send({ error: "Invalid Request !" });
+        return reply.code(422).send({ error: "invalid_request" });
       }
 
       const { tenantId, email, password } = parsed.data;
@@ -86,95 +62,98 @@ export async function authRoutes(app: FastifyInstance) {
         select: { id: true, tenantId: true, roleId: true, passwordHash: true },
       });
 
-      if (!user) return reply.code(401).send({ error: "Invalid Credentials !" });
+      if (!user) return reply.code(401).send({ error: "invalid_credentials" });
 
       const ok = await bcrypt.compare(password, user.passwordHash);
-      if (!ok) return reply.code(401).send({ error: "Invalid Credentials !" });
+      if (!ok) return reply.code(401).send({ error: "invalid_credentials" });
 
-      const accessToken = await reply.jwtSign({
-        userId: user.id,
-        tenantId: user.tenantId,
-        roleId: user.roleId,
-      });
+      const accessToken = await reply.jwtSign(
+        { userId: user.id, tenantId: user.tenantId, roleId: user.roleId },
+        { expiresIn: accessTTL() }
+      );
 
       const refreshToken = newRefreshToken();
-      const tokenHash = sha256(refreshToken);
+      const refreshHash = hashToken(refreshToken);
+      const expiresAt = refreshExpiresAt();
 
       await app.prisma.refreshToken.create({
         data: {
           tenantId: user.tenantId,
           userId: user.id,
-          tokenHash,
-          expiresAt: refreshExpiresAt(),
+          tokenHash: refreshHash,
+          expiresAt
         },
       });
 
-      setRefreshCookie(reply, refreshToken)
+      reply.setCookie(REFRESH_COOKIE, refreshToken, refreshCookieOptions());
+
       return reply.send({ accessToken });
     }
   );
 
   app.post("/auth/refresh", async (req, reply) => {
-    const token = (req.cookies as any)?.[REFRESH_COOKIE];
-    if(!token) return reply.code(401).send({ error: "unauthorized "});
+    const token = req.cookies[REFRESH_COOKIE];
+    if(!token) return reply.code(401).send({ error: "missing_refresh_token" });
 
-    const tokenHash = sha256(token);
+    const tokenHash = hashToken(token);
+    const now = new Date();
 
-    const existing = await app.prisma.refreshToken.findUnique({
-      where: { tokenHash },
+    const existing = await app.prisma.refreshToken.findFirst({
+      where: {
+        tokenHash,
+        revokedAt: null,
+        expiresAt: { gt: now },
+      },
+      select: { id: true, userId: true, tenantId: true },
     });
 
-    if (!existing || existing.revokedAt || existing.expiresAt <= new Date()) {
-      return reply.code(401).send({ error: "unauthorized" });
-    }
+    if (!existing) return reply.code(401).send({ error: "invalid_refresh_token" });
 
-    await app.prisma.refreshToken.update({
-      where: { tokenHash },
-      data: { revokedAt: new Date() },
-    });
-
-    const user = await app.prisma.user.findUnique({
-      where: { id: existing.userId },
+    const user = await app.prisma.user.findFirst({
+      where: { id: existing.userId, tenantId: existing.tenantId },
       select: { id: true, tenantId: true, roleId: true },
     });
+    if(!user) return reply.code(401).send({ error: "invalid_refresh_token" });
 
-    if(!user || user.tenantId !== existing.tenantId) {
-      return reply.code(401).send({ error: "Unauthorized !" });
-    }
-    const newRt = newRefreshToken();
-    const newHash = sha256(newRt);
+    await app.prisma.refreshToken.update({
+      where: { id: existing.id },
+      data: { revokedAt: now },
+    });
+
+    const newToken = newRefreshToken();
+    const newHash = hashToken(newToken);
+    const expiresAt = refreshExpiresAt();
 
     await app.prisma.refreshToken.create({
       data: {
         tenantId: user.tenantId,
         userId: user.id,
         tokenHash: newHash,
-        expiresAt: refreshExpiresAt(),
+        expiresAt,
       },
     });
 
-    const accessToken = await reply.jwtSign({
-      tenantId: user.tenantId,
-      userId: user.id,
-      roleId: user.roleId,
-    });
+    reply.setCookie(REFRESH_COOKIE, newToken, refreshCookieOptions());
 
-    setRefreshCookie(reply, newRt);
+    const accessToken = await reply.jwtSign(
+      { userId: user.id, tenantId: user.tenantId, roleId: user.roleId },
+      { expiresIn: accessTTL() }
+    );
+
     return reply.send({ accessToken });
   });
 
   app.post("/auth/logout", async (req, reply) => {
-    const token = (req.cookies as any)?.[REFRESH_COOKIE];
-
+    const token = req.cookies[REFRESH_COOKIE];
     if (token) {
-      const tokenHash = sha256(token);
+      const tokenHash = hashToken(token);
       await app.prisma.refreshToken.updateMany({
         where: { tokenHash, revokedAt: null },
         data: { revokedAt: new Date() },
       });
     }
 
-    clearRefreshCookie(reply);
-    return reply.code(204).send();
+    reply.clearCookie(REFRESH_COOKIE, refreshCookieOptions());
+    return reply.code(200).send({ ok: true });
   });
 }

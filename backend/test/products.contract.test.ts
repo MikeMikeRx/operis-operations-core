@@ -81,7 +81,7 @@ beforeAll(async () => {
   await request(app.server)
     .post("/api/v1/auth/logout")
     .set("Cookie", refreshCookie)
-    .expect(204);
+    .expect(200);
 
   await request(app.server)
     .post("/api/v1/auth/refresh")
