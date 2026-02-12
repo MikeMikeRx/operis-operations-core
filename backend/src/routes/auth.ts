@@ -10,6 +10,18 @@ const LoginBody = z.object({
   password: z.string().min(8),
 });
 
+const errorResponse = {
+  type: "object",
+  required: ["error"],
+  properties: { error: { type: "string" } },
+} as const;
+
+const tokenResponse = {
+  type: "object",
+  required: ["accessToken"],
+  properties: { accessToken: { type: "string" } },
+} as const;
+
 const accessTTL = () => process.env.JWT_EXPIRES_IN ?? "15m";
 const refreshDays = () => Number(process.env.REFRESH_DAYS ?? 30);
 const refreshExpiresAt = () =>
@@ -32,21 +44,9 @@ export async function authRoutes(app: FastifyInstance) {
           },
         },
         response: {
-          200: {
-            type: "object",
-            required: ["accessToken"],
-            properties: { accessToken: { type: "string" } },
-          },
-          401: {
-            type: "object",
-            required: ["error"],
-            properties: { error: { type: "string" } },
-          },
-          422: {
-            type: "object",
-            required: ["error"],
-            properties: { error: { type: "string" } },
-          },
+          200: tokenResponse,
+          401: errorResponse,
+          422: errorResponse,
         },
       },
     },
@@ -92,7 +92,13 @@ export async function authRoutes(app: FastifyInstance) {
     }
   );
 
-  app.post("/auth/refresh", { config: { rateLimit: { max: 20, timeWindow: "1 minute" } } }, async (req, reply) => {
+  app.post("/auth/refresh", {
+    config: { rateLimit: { max: 20, timeWindow: "1 minute" } },
+    schema: {
+      tags: ["auth"],
+      response: { 200: tokenResponse, 401: errorResponse },
+    },
+  }, async (req, reply) => {
     const token = req.cookies[REFRESH_COOKIE];
     if(!token) return reply.code(401).send({ error: "missing_refresh_token" });
 
@@ -145,7 +151,19 @@ export async function authRoutes(app: FastifyInstance) {
     return reply.send({ accessToken });
   });
 
-  app.post("/auth/logout", { config: { rateLimit: { max: 20, timeWindow: "1 minute" } } }, async (req, reply) => {
+  app.post("/auth/logout", {
+    config: { rateLimit: { max: 20, timeWindow: "1 minute" } },
+    schema: {
+      tags: ["auth"],
+      response: {
+        200: {
+          type: "object",
+          required: ["ok"],
+          properties: { ok: { type: "boolean" } },
+        },
+      },
+    },
+  }, async (req, reply) => {
     const token = req.cookies[REFRESH_COOKIE];
     if (token) {
       const tokenHash = hashToken(token);
