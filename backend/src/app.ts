@@ -1,6 +1,6 @@
 import Fastify from "fastify";
-
 import cookie from "@fastify/cookie";
+
 import requestContextPlugin from "./plugins/requestContext.js";
 import idempotencyPlugin from "./plugins/idempotency.js";
 import rateLimitPlugin from "./plugins/rateLimit.js";
@@ -8,6 +8,7 @@ import apiAuthGuardPlugin from "./plugins/apiAuthGuard.js";
 import swaggerPlugin from "./plugins/swagger.js";
 import jwtPlugin from "./plugins/jwt.js";
 import dbPlugin from "./plugins/db.js";
+
 import { productsRoutes } from "./routes/products.js";
 import { authRoutes } from "./routes/auth.js";
 
@@ -30,12 +31,14 @@ export function buildApp() {
   app.register(rateLimitPlugin);
   app.register(idempotencyPlugin);
   app.register(swaggerPlugin);
-  app.register(authRoutes, {prefix: "/api/v1" });
-  app.register(productsRoutes, { prefix: "/api/v1" });
   app.register(cookie, {
     secret: process.env.COOKIE_SECRET ?? process.env.JWT_SECRET,
     hook: "onRequest",
   });
+
+  app.register(authRoutes, {prefix: "/api/v1" });
+  app.register(productsRoutes, { prefix: "/api/v1" });
+
 
   app.get(
     "/health",
