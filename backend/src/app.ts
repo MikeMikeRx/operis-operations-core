@@ -1,9 +1,6 @@
 import Fastify from "fastify";
 
-// Cookie
 import cookie from "@fastify/cookie";
-
-// Plugins
 import requestContextPlugin from "./plugins/requestContext.js";
 import idempotencyPlugin from "./plugins/idempotency.js";
 import rateLimitPlugin from "./plugins/rateLimit.js";
@@ -11,14 +8,12 @@ import apiAuthGuardPlugin from "./plugins/apiAuthGuard.js";
 import swaggerPlugin from "./plugins/swagger.js";
 import jwtPlugin from "./plugins/jwt.js";
 import dbPlugin from "./plugins/db.js";
-
-// Routes
 import { productsRoutes } from "./routes/products.js";
 import { authRoutes } from "./routes/auth.js";
 
-// App factory for server and tests
 export function buildApp() {
   const app = Fastify({
+    trustProxy: true,
     logger: {
       level: "info",
       transport:
@@ -28,30 +23,20 @@ export function buildApp() {
     },
   });
 
-  // --- Core plugins ---
   app.register(requestContextPlugin);
   app.register(dbPlugin);
-
-  // --- Security & protection ---
   app.register(jwtPlugin);
   app.register(apiAuthGuardPlugin);
   app.register(rateLimitPlugin);
   app.register(idempotencyPlugin);
-
-  // --- Documentation ---
   app.register(swaggerPlugin);
-
-  // --- Business routes ---
   app.register(authRoutes, {prefix: "/api/v1" });
   app.register(productsRoutes, { prefix: "/api/v1" });
-
-  // --- Cookie ---
   app.register(cookie, {
     secret: process.env.COOKIE_SECRET ?? process.env.JWT_SECRET,
     hook: "onRequest",
   });
 
-  // --- System routes ---
   app.get(
     "/health",
     {
