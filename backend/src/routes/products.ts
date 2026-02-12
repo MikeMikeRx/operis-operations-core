@@ -1,5 +1,4 @@
 import type { FastifyInstance } from "fastify";
-import { requireAuth } from "../auth/requireAuth.js";
 import { requirePerm } from "../auth/rbac.js";
 import { tenantDb } from "../db/tenant.js";
 import { CreateProductBody, UpdateProductBody, type CreateProductBodyType, type UpdateProductBodyType } from "./product.schemas.js";
@@ -12,7 +11,7 @@ export async function productsRoutes(app: FastifyInstance) {
   app.get<{ Querystring: ProductQuery }>(
     "/products",
     {
-      preHandler: [requireAuth, requirePerm("product:read")],
+      preHandler: [requirePerm("product:read")],
       config: { rateLimit: { max: 120, timeWindow: "1 minute" } },
       schema: {
         tags: ["products"],
@@ -41,7 +40,7 @@ export async function productsRoutes(app: FastifyInstance) {
   app.post<{ Body: CreateProductBodyType }>(
     "/products",
     {
-      preHandler: [requireAuth, requirePerm("product:write")],
+      preHandler: [requirePerm("product:write")],
       config: { rateLimit: { max: 60, timeWindow: "1 minute" } },
       schema: { tags: ["products"] },
     },
@@ -70,7 +69,7 @@ export async function productsRoutes(app: FastifyInstance) {
   app.patch<{ Params: ProductParams; Body: UpdateProductBodyType }>(
     "/products/:id",
     {
-      preHandler: [requireAuth, requirePerm("product:write")],
+      preHandler: [requirePerm("product:write")],
       config: { rateLimit: { max: 60, timeWindow: "1 minute" } },
       schema: {
         tags: ["products"],
@@ -116,7 +115,7 @@ export async function productsRoutes(app: FastifyInstance) {
   app.delete<{ Params: ProductParams }>(
     "/products/:id",
     {
-      preHandler: [requireAuth, requirePerm("product:write")],
+      preHandler: [requirePerm("product:write")],
       config: { rateLimit: { max: 60, timeWindow: "1 minute" } },
       schema: {
         tags: ["products"],
