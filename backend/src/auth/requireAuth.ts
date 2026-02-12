@@ -1,23 +1,36 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 
+interface JwtPayload {
+  tenantId: string;
+  userId: string;
+  roleId: string;
+}
+
+declare module "@fastify/jwt" {
+  interface FastifyJWT {
+    payload: JwtPayload;
+    user: JwtPayload;
+  }
+}
+
 declare module "fastify" {
   interface FastifyRequest {
-    auth: { tenantId: string; userId: string; roleId: string };
+    auth: JwtPayload;
   }
 }
 
 export async function requireAuth(req: FastifyRequest, reply: FastifyReply) {
   try {
-    await (req as any).jwtVerify();
+    await req.jwtVerify();
   } catch {
     return reply.code(401).send({ error: "unauthorized" });
   }
 
-  const u = (req as any).user as any;
-  if (!u?.tenantId || !u?.userId || !u?.roleId) {
+  const { tenantId, userId, roleId } = req.user;
+  if (!tenantId || !userId || !roleId) {
     return reply.code(401).send({ error: "unauthorized" });
   }
 
-  req.auth = { tenantId: u.tenantId, userId: u.userId, roleId: u.roleId };
-  req.log = req.log.child({ tenantId: u.tenantId, userId: u.userId });
+  req.auth = { tenantId, userId, roleId };
+  req.log = req.log.child({ tenantId, userId });
 }
