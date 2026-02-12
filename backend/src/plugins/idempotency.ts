@@ -6,13 +6,18 @@ function sha256(input: string) {
   return crypto.createHash("sha256").update(input).digest("hex");
 }
 
-type IdempotencyCtx = {
+interface CachedResponse {
+  statusCode: number;
+  body: unknown;
+}
+
+interface IdempotencyCtx {
   tenantId: string;
   key: string;
   method: string;
   path: string;
   requestHash: string;
-};
+}
 
 declare module "fastify" {
   interface FastifyRequest {
@@ -21,7 +26,6 @@ declare module "fastify" {
 }
 
 export default fp(async function (app: FastifyInstance) {
-  // 1) Validate + short-circuit on duplicates
   app.addHook("preHandler", async (req: FastifyRequest, reply: FastifyReply) => {
     const method = req.method.toUpperCase();
     
@@ -36,7 +40,7 @@ export default fp(async function (app: FastifyInstance) {
       return reply.code(400).send({ error: "Idempotency-Key header is required for write requests" });
     }
 
-    const tenantId = (req as any).auth?.tenantId as string | undefined;
+    const tenantId = req.auth?.tenantId;
     if (!tenantId) return;
 
     const path = req.routeOptions?.url ?? req.url.split("?")[0];
@@ -52,9 +56,9 @@ export default fp(async function (app: FastifyInstance) {
         return reply.code(409).send({ error: "Idempotency-Key reused with different request" });
       }
 
-      // Return cached response
-      const statusCode = (existing.response as any)?.statusCode ?? 200;
-      const body = (existing.response as any)?.body ?? existing.response;
+      const cached = existing.response as unknown as CachedResponse;
+      const statusCode = cached.statusCode ?? 200;
+      const body = cached.body ?? existing.response;
 
       return reply.code(statusCode).send(body);
     }
@@ -62,7 +66,6 @@ export default fp(async function (app: FastifyInstance) {
     req.idempotency = { tenantId, key: key.trim(), method, path, requestHash };
   });
 
-  // 2) Persist response for first-time requests
   app.addHook("onSend", async (req, reply, payload) => {
     if (!req.idempotency) return;
 
@@ -87,7 +90,7 @@ export default fp(async function (app: FastifyInstance) {
           expiresAt,
         },
       });
-    } catch (e: any) {
+    } catch (e: unknown) {
       req.log.warn({ err: e }, "idempotency write failed");
     }
 
