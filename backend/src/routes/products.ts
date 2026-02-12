@@ -25,11 +25,14 @@ export async function productsRoutes(app: FastifyInstance) {
       },
     },
     async (req) => {
+      const { auth } = req;
+      if (!auth) throw new Error("unreachable: auth missing");
+
       const raw = req.query.limit;
       const parsed = typeof raw === "number" ? raw : Number(raw ?? 20);
       const limit = Number.isFinite(parsed) ? Math.min(parsed, 100) : 20;
 
-      const db = tenantDb(app.prisma, req.auth.tenantId);
+      const db = tenantDb(app.prisma, auth.tenantId);
 
       return db.product.findMany({ take: limit, orderBy: { createdAt: "desc" } });
     }
@@ -43,14 +46,17 @@ export async function productsRoutes(app: FastifyInstance) {
       schema: { tags: ["products"] },
     },
     async (req, reply) => {
+      const { auth } = req;
+      if (!auth) throw new Error("unreachable: auth missing");
+
       const body = CreateProductBody.parse(req.body);
-      const db = tenantDb(app.prisma, req.auth.tenantId);
+      const db = tenantDb(app.prisma, auth.tenantId);
 
       const created = await db.product.create(body);
 
       await writeAudit(app.prisma, {
-        tenantId: req.auth.tenantId,
-        actorId: req.auth.userId,
+        tenantId: auth.tenantId,
+        actorId: auth.userId,
         action: "product.create",
         entity: "Product",
         entityId: created.id,
@@ -76,10 +82,13 @@ export async function productsRoutes(app: FastifyInstance) {
       },
     },
     async (req, reply) => {
+      const { auth } = req;
+      if (!auth) throw new Error("unreachable: auth missing");
+
       const { id } = req.params;
       const body = UpdateProductBody.parse(req.body);
 
-      const db = tenantDb(app.prisma, req.auth.tenantId);
+      const db = tenantDb(app.prisma, auth.tenantId);
 
       const res = await db.product.updateMany({
         where: { id },
@@ -92,8 +101,8 @@ export async function productsRoutes(app: FastifyInstance) {
       if (!updated) return reply.code(404).send({ error: "not found" });
 
       await writeAudit(app.prisma, {
-        tenantId: req.auth.tenantId,
-        actorId: req.auth.userId,
+        tenantId: auth.tenantId,
+        actorId: auth.userId,
         action: "product.update",
         entity: "Product",
         entityId: id,
@@ -119,9 +128,12 @@ export async function productsRoutes(app: FastifyInstance) {
       },
     },
     async (req, reply) => {
+      const { auth } = req;
+      if (!auth) throw new Error("unreachable: auth missing");
+
       const { id } = req.params;
 
-      const db = tenantDb(app.prisma, req.auth.tenantId);
+      const db = tenantDb(app.prisma, auth.tenantId);
 
       const res = await db.product.updateMany({
         where: { id },
@@ -131,8 +143,8 @@ export async function productsRoutes(app: FastifyInstance) {
       if (res.count === 0) return reply.code(404).send({ error: "not found" });
 
       await writeAudit(app.prisma, {
-        tenantId: req.auth.tenantId,
-        actorId: req.auth.userId,
+        tenantId: auth.tenantId,
+        actorId: auth.userId,
         action: "product.delete",
         entity: "Product",
         entityId: id,

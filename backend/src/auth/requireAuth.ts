@@ -15,7 +15,7 @@ declare module "@fastify/jwt" {
 
 declare module "fastify" {
   interface FastifyRequest {
-    auth: JwtPayload;
+    auth?: JwtPayload;
   }
 }
 

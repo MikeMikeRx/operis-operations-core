@@ -12,7 +12,7 @@ export default fp(async function (app: FastifyInstance) {
     redis,
     global: false,
     keyGenerator: (req) => {
-      const tenantId = (req as any).auth?.tenantId;
+      const tenantId = req.auth?.tenantId;
       return tenantId ? `tenant:${tenantId}` : req.ip;
     },
     addHeaders: {
