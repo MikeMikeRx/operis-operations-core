@@ -2,6 +2,8 @@
 
 **Operis Operations Core** is a backend-first, multi-tenant SaaS providing reliable foundations for internal business operations.
 
+🚧 The project is functional but **still evolving**.
+
 ---
 
 ## What This Project Is
@@ -61,6 +63,7 @@
   - Soft-deleted records purged automatically
   - Audit logs retained for a fixed window
   - Expired idempotency keys cleaned up
+  - Expired refresh tokens purged automatically
 
 - **Contract Testing**
   - HTTP-level contract tests
@@ -89,7 +92,7 @@
 ## API
 
 - Base path: `/api/v1`
-- OpenAPI docs: `/docs`
+- OpenAPI docs: `/docs` (development only)
 - Health check: `/health`
 - Meta endpoint: `/api/v1/meta`
 
