@@ -1,4 +1,5 @@
 import type { FastifyInstance } from "fastify";
+import { Prisma } from "../generated/prisma/client.js";
 import { requirePerm } from "../auth/rbac.js";
 import { tenantDb } from "../db/tenant.js";
 import { CreateProductBody, UpdateProductBody, type CreateProductBodyType, type UpdateProductBodyType } from "./product.schemas.js";
@@ -6,6 +7,24 @@ import { writeAudit } from "../audit/audit.js";
 
 interface ProductQuery { limit?: number }
 interface ProductParams { id: string }
+
+const productResponse = {
+  type: "object",
+  properties: {
+    id: { type: "string" },
+    sku: { type: "string" },
+    name: { type: "string" },
+    unit: { type: "string", nullable: true },
+    createdAt: { type: "string", format: "date-time" },
+    updatedAt: { type: "string", format: "date-time" },
+  },
+} as const;
+
+const errorResponse = {
+  type: "object",
+  required: ["error"],
+  properties: { error: { type: "string" } },
+} as const;
 
 export async function productsRoutes(app: FastifyInstance) {
   app.get<{ Querystring: ProductQuery }>(
@@ -21,19 +40,18 @@ export async function productsRoutes(app: FastifyInstance) {
             limit: { type: "integer", minimum: 1, maximum: 100, default: 20 },
           },
         },
+        response: {
+          200: { type: "array", items: productResponse },
+        },
       },
     },
     async (req) => {
       const { auth } = req;
       if (!auth) throw new Error("unreachable: auth missing");
 
-      const raw = req.query.limit;
-      const parsed = typeof raw === "number" ? raw : Number(raw ?? 20);
-      const limit = Number.isFinite(parsed) ? Math.min(parsed, 100) : 20;
-
       const db = tenantDb(app.prisma, auth.tenantId);
 
-      return db.product.findMany({ take: limit, orderBy: { createdAt: "desc" } });
+      return db.product.findMany({ take: req.query.limit, orderBy: { createdAt: "desc" } });
     }
   );
 
@@ -42,7 +60,10 @@ export async function productsRoutes(app: FastifyInstance) {
     {
       preHandler: [requirePerm("product:write")],
       config: { rateLimit: { max: 60, timeWindow: "1 minute" } },
-      schema: { tags: ["products"] },
+      schema: {
+        tags: ["products"],
+        response: { 201: productResponse },
+      },
     },
     async (req, reply) => {
       const { auth } = req;
@@ -78,6 +99,7 @@ export async function productsRoutes(app: FastifyInstance) {
           required: ["id"],
           properties: { id: { type: "string", minLength: 1} },
         },
+        response: { 200: productResponse, 404: errorResponse },
       },
     },
     async (req, reply) => {
@@ -89,15 +111,15 @@ export async function productsRoutes(app: FastifyInstance) {
 
       const db = tenantDb(app.prisma, auth.tenantId);
 
-      const res = await db.product.updateMany({
-        where: { id },
-        data: body,
-      });
-
-      if (res.count === 0) return reply.code(404).send({ error: "not found" });
-
-      const updated = await db.product.findFirst({ where: { id } });
-      if (!updated) return reply.code(404).send({ error: "not found" });
+      let updated;
+      try {
+        updated = await db.product.update({ where: { id }, data: body });
+      } catch (err) {
+        if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2025") {
+          return reply.code(404).send({ error: "not found" });
+        }
+        throw err;
+      }
 
       await writeAudit(app.prisma, {
         tenantId: auth.tenantId,
@@ -124,6 +146,7 @@ export async function productsRoutes(app: FastifyInstance) {
           required: ["id"],
           properties: { id: { type: "string", minLength: 1 } },
         },
+        response: { 204: { type: "null" }, 404: errorResponse },
       },
     },
     async (req, reply) => {
@@ -149,7 +172,7 @@ export async function productsRoutes(app: FastifyInstance) {
         entityId: id,
       });
 
-      return reply.code(200).send({ deleted: true, id });
+      return reply.code(204).send();
     }
   );
 }

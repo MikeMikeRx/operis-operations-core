@@ -30,12 +30,16 @@ export function tenantDb(prisma: PrismaClient, tenantId: string) {
           throw err;
         }
       },
+      update: (args: { where: { id: string }; data: Prisma.ProductUpdateInput }) =>
+        prisma.product.update({
+          where: { id: args.where.id, tenantId, deletedAt: null },
+          data: args.data,
+        }),
       updateMany: (args: { where: Prisma.ProductWhereInput; data: Prisma.ProductUpdateInput }) =>
         prisma.product.updateMany({
           where: { ...args.where, tenantId, deletedAt: null },
           data: args.data,
         }),
     },
-    // will expand this object per model over time
   };
 }
