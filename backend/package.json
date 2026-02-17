@@ -9,7 +9,8 @@
     "start": "npx prisma migrate deploy && node dist/server.js",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run",
-    "worker": "tsx src/worker.ts"
+    "worker": "tsx src/worker.ts",
+    "start:worker": "node dist/worker.js"
   },
   "keywords": [],
   "author": "",
