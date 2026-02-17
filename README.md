@@ -85,14 +85,15 @@
 - **Logging**: Pino
 - **Testing**: Vitest + Supertest
 - **CI**: GitHub Actions
-- **Containerization**: Docker Compose
+- **Containerization**: Docker
+- **Deployment**: Railway
 
 ---
 
 ## API
 
 - Base path: `/api/v1`
-- OpenAPI docs: `/docs` (development only)
+- OpenAPI docs: `/docs`
 - Health check: `/health`
 - Meta endpoint: `/api/v1/meta`
 
