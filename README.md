@@ -6,6 +6,8 @@
 #### Live API Docs(Swagger): [View on Railway](https://operis-operations-core-production.up.railway.app/docs)
 - To login use: [Demo Credentials](#demo-credentials)
 
+📕 Author notes: See [AUTHOR_NOTES.md](/AUTHOR_NOTES.md) for the motivation, background, and design decisions behind this project.
+
 ---
 
 ## What This Project Is
