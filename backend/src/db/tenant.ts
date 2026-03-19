@@ -41,5 +41,19 @@ export function tenantDb(prisma: PrismaClient, tenantId: string) {
           data: args.data,
         }),
     },
+    stockMovement: {
+      findMany: (args?: Prisma.StockMovementFindManyArgs) =>
+        prisma.stockMovement.findMany({
+          ...args,
+          where: { ...args?.where, tenantId },
+        }),
+      findFirst: (args?: Prisma.StockMovementFindFirstArgs) =>
+        prisma.stockMovement.findFirst({
+          ...args,
+          where: { ...args?.where, tenantId },
+        }),
+      create: (data: Omit<Prisma.StockMovementUncheckedCreateInput, "tenantId">) =>
+        prisma.stockMovement.create({ data: { ...data, tenantId } }),
+    },
   };
 }
