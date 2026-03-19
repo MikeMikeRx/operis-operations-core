@@ -9,8 +9,9 @@ import swaggerPlugin from "./plugins/swagger.js";
 import jwtPlugin from "./plugins/jwt.js";
 import dbPlugin from "./plugins/db.js";
 
-import { productsRoutes } from "./routes/products.js";
 import { authRoutes } from "./routes/auth.js";
+import { productsRoutes } from "./routes/products.js";
+import { stockMovementsRoutes } from "./routes/stock-movements.js";
 
 export function buildApp() {
   const app = Fastify({
@@ -38,7 +39,7 @@ export function buildApp() {
 
   app.register(authRoutes, {prefix: "/api/v1" });
   app.register(productsRoutes, { prefix: "/api/v1" });
-
+  app.register(stockMovementsRoutes, { prefix: "/api/v1" });
 
   app.get(
     "/health",
