@@ -21,6 +21,10 @@ This project follows **API versioning discipline**:
 - JWT authentication (Bearer tokens) for /api/v1
 - Refresh tokens with rotation and server-side revocation
 - Logout endpoint revoking refresh tokens
+- Tenant isolation tests (cross-tenant visibility, mutations, login, forged JWT, idempotency key namespacing, `tenantDb` unit tests)
+- Stock movement endpoints (`POST/GET /api/v1/stock-movements`, `GET /api/v1/stock-movements/:id`)
+- `MovementType` enum: `IN`, `OUT`, `ADJUST`, `TRANSFER`
+- `stockmovement:read` and `stockmovement:write` RBAC permissions
 
 ### Changed
 - Enforced `/api/v1` prefix for all public routes

@@ -12,9 +12,9 @@
 
 ## What This Project Is
 
-- A multi-tenant API built as a learning project
+- A backend foundation for a multi-tenant SaaS system
 - Backend-first and API-only (no frontend)
-- Explores patterns like RBAC, idempotency, and background jobs
+- Implements RBAC, idempotency, and background jobs
 
 ---
 
@@ -39,6 +39,11 @@
   - Create, list (with limit), update, soft-delete products
   - Tenant-scoped access only
   - Rate limiting applied per route
+
+- **Stock Movements**
+  - Record inventory movements: `IN`, `OUT`, `ADJUST`, `TRANSFER`
+  - List and retrieve movements, scoped by tenant
+  - Optional `reason` and `reference` fields
 
 - **Audit Logging**
   - Audit record written on every write operation
@@ -68,7 +73,7 @@
 
 - **Testing**
   - HTTP-level integration tests against real Postgres and Redis
-  - Covers auth flow (token expiry, rotation, logout) and product endpoints
+  - Covers auth flow, product endpoints, stock movement endpoints, and tenant isolation
   - Runs in CI via GitHub Actions
 
 ---
