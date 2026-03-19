@@ -32,7 +32,13 @@ beforeAll(async () => {
     data: {
       tenantId: tenant.id,
       name: "TEST",
-      permissions: ["product:read", "product:write", "audit:read"],
+      permissions: [
+        "product:read",
+        "product:write",
+        "stockmovement:read",
+        "stockmovement:write",
+        "audit:read",
+      ],
     },
   });
 

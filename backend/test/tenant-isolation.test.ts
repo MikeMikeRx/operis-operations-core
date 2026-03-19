@@ -26,7 +26,13 @@ beforeAll(async () => {
     data: {
       tenantId: tenantA.id,
       name: "ADMIN",
-      permissions: ["product:read", "product:write"],
+      permissions: [
+        "product:read", 
+        "product:write",
+        "stockmovement:read",
+        "stockmovement:write",
+        "audit:read"
+      ],
     },
   });
   await app.prisma.user.create({
@@ -45,7 +51,13 @@ beforeAll(async () => {
     data: {
       tenantId: tenantB.id,
       name: "ADMIN",
-      permissions: ["product:read", "product:write"],
+      permissions: [
+        "product:read",
+        "product:write",
+        "stockmovement:read",
+        "stockmovement:write",
+        "audit:read"
+      ],
     },
   });
   await app.prisma.user.create({

@@ -21,7 +21,7 @@ async function main() {
       id: "r1",
       tenantId: t1.id,
       name: "ADMIN",
-      permissions: ["product:read", "product:write", "audit:read"],
+      permissions: ["product:read", "product:write", "stockmovement:read", "stockmovement:write", "audit:read"],
     },
   });
 
@@ -62,7 +62,7 @@ async function main() {
       id: "r2",
       tenantId: t2.id,
       name: "ADMIN",
-      permissions: ["product:read", "product:write", "audit:read"],
+      permissions: ["product:read", "product:write", "stockmovement:read", "stockmovement:write", "audit:read"],
     },
   });
 
