@@ -80,6 +80,7 @@ enum MovementType {
   IN
   OUT
   ADJUST
+  TRANSFER
 }
 
 model StockMovement {
@@ -88,7 +89,8 @@ model StockMovement {
   productId String
   type      MovementType
   quantity  Int
-  note      String?
+  reason    String?
+  reference String?
   createdBy String?
   createdAt DateTime     @default(now())
 
