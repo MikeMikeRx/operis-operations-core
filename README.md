@@ -1,6 +1,6 @@
 # OPERIS CORE
 
-**Operis Operations Core** is a backend-first, multi-tenant SaaS providing reliable foundations for internal business operations.
+**Operis Operations Core** is a portfolio project exploring backend fundamentals: a multi-tenant API with auth, RBAC, idempotency, rate limiting, and background workers.
 
 
 #### Live API Docs(Swagger): [View on Railway](https://operis-operations-core-production.up.railway.app/docs)
@@ -12,10 +12,9 @@
 
 ## What This Project Is
 
-- A multi-tenant SaaS API
+- A multi-tenant API built as a learning project
 - Backend-first and API-only (no frontend)
-- Designed around real-world operational constraints
-- Built with production patterns from day one
+- Explores patterns like RBAC, idempotency, and background jobs
 
 ---
 
@@ -24,14 +23,12 @@
 ### Core Capabilities
 
 - **Multi-Tenancy**
-  - Strict tenant isolation
   - All data scoped by `tenantId`
-  - Tenant-aware indexing strategy
+  - Composite indexes on `tenantId` + entity keys
 
 - **RBAC (Role-Based Access Control)**
-  - Role-based permissions
-  - Middleware-enforced access checks
-  - No route bypasses authorization
+  - Role-based permissions stored in the database
+  - Permission check runs as a preHandler on protected routes
 
 - **Authentication**
   - JWT-based authentication (Bearer tokens)
@@ -39,14 +36,14 @@
   - Logout support
 
 - **Product Operations**
-  - Create, list, update, soft-delete products
+  - Create, list (with limit), update, soft-delete products
   - Tenant-scoped access only
-  - Pagination and rate limiting applied
+  - Rate limiting applied per route
 
 - **Audit Logging**
-  - Immutable audit trail for write operations
+  - Audit record written on every write operation
   - Tracks actor, action, entity, and timestamp
-  - Retention policies enforced
+  - Records older than 90 days are purged automatically
 
 - **Idempotency**
   - Required for all write requests
@@ -61,7 +58,7 @@
 - **Background Workers**
   - BullMQ + Redis
   - Scheduled maintenance and cleanup jobs
-  - Retry and failure handling
+  - Failed jobs retained in queue (BullMQ defaults)
 
 - **Data Retention**
   - Soft-deleted records purged automatically
@@ -69,10 +66,10 @@
   - Expired idempotency keys cleaned up
   - Expired refresh tokens purged automatically
 
-- **Contract Testing**
-  - HTTP-level contract tests
-  - CI-enforced
-  - OpenAPI kept in sync with behavior
+- **Testing**
+  - HTTP-level integration tests against real Postgres and Redis
+  - Covers auth flow (token expiry, rotation, logout) and product endpoints
+  - Runs in CI via GitHub Actions
 
 ---
 
@@ -173,7 +170,7 @@ Both can run simultaneously without conflicts.
 
 ---
 
-## Production
+## Deployed Demo
 
 - **Base URL:** https://operis-operations-core-production.up.railway.app
 - **Swagger UI:** /docs
