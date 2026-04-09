@@ -1,7 +1,6 @@
 # OPERIS CORE
 
-**Operis Operations Core** is a portfolio project exploring backend fundamentals: a multi-tenant API with auth, RBAC, idempotency, rate limiting, and background workers.
-
+**Operis Operations Core** is a backend only multi tenant SaaS API implementing production patterns: RBAC, idempotency, Redis backed rate limiting, BullMQ background workers, and refresh token rotation with server-side revocation.
 
 #### Live API Docs(Swagger): [View on Railway](https://operis-operations-core-production.up.railway.app/docs)
 - To login use: [Demo Credentials](#demo-credentials)

@@ -1,21 +1,17 @@
-# Author Notes
+## What This Is
 
-## Motivation
+Operis is a backend only multi-tenant SaaS API. It was kept backend only intentionally to serve as a reusable core that a frontend can be built on top of, rather than coupling architecture decisions to a specific UI.
 
-This project was created as my most realistic business-oriented backend application so far. The goal was to design a strong backend foundation that could scale later, which is why development was intentionally stopped at this stage.
+## Key Decisions
 
-The main objective was to build a multi-tenant SaaS platform with strict data isolation and high security standards, focusing on backend architecture rather than frontend functionality.
+Fastify over Express — better TypeScript support, built-in schema validation, and significantly faster request handling
 
-## Why This Idea
+Idempotency required on all write endpoints — safe retries without duplicate side effects; keys are persisted and conflicts are detected
 
-I wanted to move beyond being only a React developer and deepen my understanding of backend systems. Compared to my previous full-stack project, [Vitesse CRM/ERP](https://github.com/MikeMikeRx/vitesse-crm), where I built a backend for the first time, this project focuses much more on robustness, security, and architectural patterns.
+Redis backed rate limiting per tenant — prevents one tenant from affecting others under load
 
-I intentionally pushed the project slightly beyond my current knowledge to explore more advanced backend concepts and development practices.
+Refresh token rotation with server side revocation — stateless access tokens with the ability to invalidate sessions
 
-## Inspiration
+BullMQ for background jobs — audit log purging, soft delete cleanup, and expired token/key removal run on schedule rather than inline with requests
 
-Operis was originally planned as a full-stack business application with a React frontend. During development, I decided to keep it backend-only so it could serve as a reusable and adaptable core for future full-stack projects.
-
-## The Goal
-
-The main goal of this project was to explore backend system design more deeply, with a focus on security, data isolation, and scalable architecture.
+Audit log on every write — tracks actor, action, entity, and timestamp with a 90 day retention window
